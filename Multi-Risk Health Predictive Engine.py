@@ -14,17 +14,35 @@ warnings.filterwarnings('ignore')
 st.set_page_config(page_title="Multi-Risk Health Engine", layout="wide")
 
 # --- CSS Styling ---
-
 st.markdown("""
-
     <style>
+    /* 1. Main background */
+    .stApp { background-color: #f5f7f9; }
 
-    .main { background-color: #f5f7f9; }
+    /* 2. Target Metric Containers */
+    [data-testid="stMetric"] {
+        background-color: #ffffff;
+        padding: 15px;
+        border-radius: 10px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
 
-    .stMetric { background-color: #ffffff; padding: 15px; border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+    /* 3. Force Metric LABEL (The title) to black */
+    [data-testid="stMetricLabel"] p {
+        color: #000000 !important;
+        font-weight: bold;
+    }
 
+    /* 4. Force Metric VALUE (The percentage/number) to black */
+    [data-testid="stMetricValue"] div {
+        color: #000000 !important;
+    }
+
+    /* 5. Force general headers and subheaders to black */
+    h1, h2, h3, .stSubheader {
+        color: #000000 !important;
+    }
     </style>
-
     """, unsafe_allow_html=True)
 
 # --- Logic: Data Cleaning & Preprocessing ---
