@@ -124,7 +124,8 @@ if models:
         st.subheader("Patient Risk Profile")
         
         # --- 1. DYNAMIC DIABETES PREDICTION ---
-        input_diab = X_diab_cols.median().values.reshape(1, -1)
+        # .copy() ensures the array is writable to fix the ValueError
+        input_diab = X_diab_cols.median().values.reshape(1, -1).copy()
         if 'age' in X_diab_cols.columns:
             input_diab[0, X_diab_cols.columns.get_loc('age')] = age
         if 'bmi' in X_diab_cols.columns:
@@ -132,16 +133,16 @@ if models:
         prob_diab = model_diab.predict_proba(scaler_diab.transform(input_diab))[0][1] * 100
 
         # --- 2. DYNAMIC HEART RISK PREDICTION ---
-        input_hrt = X_hrt_cols.median().values.reshape(1, -1)
-        if 'Age' in X_hrt_cols.columns:
-            input_hrt[0, X_hrt_cols.columns.get_loc('Age')] = age
-        elif 'age' in X_hrt_cols.columns:
-            input_hrt[0, X_hrt_cols.columns.get_loc('age')] = age
-            
-        if 'BMI' in X_hrt_cols.columns:
-            input_hrt[0, X_hrt_cols.columns.get_loc('BMI')] = bmi
-        elif 'bmi' in X_hrt_cols.columns:
-            input_hrt[0, X_hrt_cols.columns.get_loc('bmi')] = bmi
+        # .copy() ensures the array is writable
+        input_hrt = X_hrt_cols.median().values.reshape(1, -1).copy()
+        
+        # Handle case-insensitive matching for heart dataset columns
+        age_col = next((c for c in X_hrt_cols.columns if c.lower() == 'age'), None)
+        bmi_col = next((c for c in X_hrt_cols.columns if c.lower() == 'bmi'), None)
+        
+        if age_col: input_hrt[0, X_hrt_cols.columns.get_loc(age_col)] = age
+        if bmi_col: input_hrt[0, X_hrt_cols.columns.get_loc(bmi_col)] = bmi
+        
         prob_heart = model_heart.predict_proba(scaler_hrt.transform(input_hrt))[0][1] * 100
 
         # --- 3. INTEGRATED CKD PREDICTION ---
