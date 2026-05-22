@@ -14,28 +14,28 @@ warnings.filterwarnings('ignore')
 st.set_page_config(page_title="Multi-Risk Health Engine", layout="wide")
 
 # --- CSS Styling ---
-
-
-
-st.markdown(
+st.markdown("""
     <style>
     .main { background-color: #f5f7f9; }
     .stMetric { background-color: #ffffff; padding: 15px; border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
 
-    /* 4. Force Metric VALUE (The percentage/number) to black */
-    [data-testid="stMetricValue"] div {
-        color: #000000 !important;
-    }
-
-    /* 3. Force Metric LABEL (The title) to black */
+    /* 3. Metric LABEL (Title) - Black and bold */
     [data-testid="stMetricLabel"] p {
         color: #000000 !important;
-        font-weight: bold;
+        font-size: 16px !important;
+        font-weight: 600 !important;
+        margin-bottom: 8px !important;
     }
 
+    /* 4. Metric VALUE (The percentage) - Black and crisp */
+    [data-testid="stMetricValue"] div {
+        color: #000000 !important;
+        font-size: 32px !important;
+        font-weight: 700 !important;
+    }
+    
     </style>
-
-, unsafe_allow_html=True)
+    """, unsafe_allow_html=True)
 
 # --- Logic: Data Cleaning & Preprocessing ---
 def clean_dataset(df):
