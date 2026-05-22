@@ -21,7 +21,7 @@ st.markdown("""
 
     /* 2. Target Metric Containers */
     [data-testid="stMetric"] {
-        background-color: #ffffff;
+        background-color: #f5f7f9;
         padding: 15px;
         border-radius: 10px;
         box-shadow: 0 2px 4px rgba(0,0,0,0.05);
