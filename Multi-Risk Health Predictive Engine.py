@@ -17,9 +17,15 @@ st.set_page_config(page_title="Multi-Risk Health Engine", layout="wide")
 st.markdown("""
     <style>
     .main { background-color: #f5f7f9; }
-    .stMetric { background-color: #ffffff; padding: 15px; border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+    
+    [data-testid="stMetric"] { 
+        background-color: #ffffff; 
+        padding: 15px; 
+        border-radius: 10px; 
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05); 
+    }
 
-    /* 3. Metric LABEL (Title) - Black and bold */
+    /* Metric LABEL (Title) - Black and bold */
     [data-testid="stMetricLabel"] p {
         color: #000000 !important;
         font-size: 16px !important;
@@ -27,13 +33,12 @@ st.markdown("""
         margin-bottom: 8px !important;
     }
 
-    /* 4. Metric VALUE (The percentage) - Black and crisp */
+    /* Metric VALUE (The percentage) - Black and crisp */
     [data-testid="stMetricValue"] div {
         color: #000000 !important;
         font-size: 32px !important;
         font-weight: 700 !important;
     }
-    
     </style>
     """, unsafe_allow_html=True)
 
@@ -79,7 +84,6 @@ def train_models():
         # Preprocessing CKD (Integrated Engine)
         df_ckd_c = clean_dataset(df_ckd)
         df_ckd_m = df_ckd_c.copy()
-        # Derive synthetic risk for training the engine
         df_ckd_m['pred_risk_diabetes'] = model_diab.predict_proba(scaler_diab.transform(X_diab.iloc[:len(df_ckd_m)]))[:, 1] * 100
         df_ckd_m['pred_risk_heart'] = model_heart.predict_proba(scaler_hrt.transform(X_hrt.iloc[:len(df_ckd_m)]))[:, 1] * 100
         
@@ -116,23 +120,19 @@ if models:
     # --- Main Dashboard ---
     col1, col2 = st.columns([1, 1])
 
-with col1:
+    with col1:
         st.subheader("Patient Risk Profile")
         
         # --- 1. DYNAMIC DIABETES PREDICTION ---
-        # Create a base array using medians so we don't use all zeros
         input_diab = X_diab_cols.median().values.reshape(1, -1)
-        # Manually map the sliders to the correct columns
         if 'age' in X_diab_cols.columns:
             input_diab[0, X_diab_cols.columns.get_loc('age')] = age
         if 'bmi' in X_diab_cols.columns:
             input_diab[0, X_diab_cols.columns.get_loc('bmi')] = bmi
-        # Scale and predict
         prob_diab = model_diab.predict_proba(scaler_diab.transform(input_diab))[0][1] * 100
 
         # --- 2. DYNAMIC HEART RISK PREDICTION ---
         input_hrt = X_hrt_cols.median().values.reshape(1, -1)
-        # Note: Check if your Heart CSV uses "Age" or "age" (it's case sensitive!)
         if 'Age' in X_hrt_cols.columns:
             input_hrt[0, X_hrt_cols.columns.get_loc('Age')] = age
         elif 'age' in X_hrt_cols.columns:
@@ -142,12 +142,9 @@ with col1:
             input_hrt[0, X_hrt_cols.columns.get_loc('BMI')] = bmi
         elif 'bmi' in X_hrt_cols.columns:
             input_hrt[0, X_hrt_cols.columns.get_loc('bmi')] = bmi
-            
-        # Scale and predict
         prob_heart = model_heart.predict_proba(scaler_hrt.transform(input_hrt))[0][1] * 100
 
         # --- 3. INTEGRATED CKD PREDICTION ---
-        # This part was already working because it used the variables directly!
         live_input = np.array([[age, bmi, sys_bp, dia_bp, creatinine, egfr, prob_diab, prob_heart]])
         final_ckd_prob = model_ckd.predict_proba(live_input)[0][1] * 100
 
@@ -166,7 +163,6 @@ with col1:
 
     with col2:
         st.subheader("Risk Engine Insights")
-        # Feature Importance Plot
         fig, ax = plt.subplots(figsize=(8, 5))
         importances = model_ckd.feature_importances_
         indices = np.argsort(importances)
@@ -181,7 +177,6 @@ with col1:
         t_col1, t_col2 = st.columns(2)
         
         with t_col1:
-            # Confusion Matrix
             preds_ckd = model_ckd.predict(X_ckd_test)
             cm = confusion_matrix(y_ckd_test, preds_ckd)
             fig_cm, ax_cm = plt.subplots()
@@ -190,7 +185,6 @@ with col1:
             st.pyplot(fig_cm)
 
         with t_col2:
-            # ROC Curve
             probs_ckd = model_ckd.predict_proba(X_ckd_test)[:, 1]
             fpr, tpr, _ = roc_curve(y_ckd_test, probs_ckd)
             fig_roc, ax_roc = plt.subplots()
@@ -201,6 +195,5 @@ with col1:
             st.pyplot(fig_roc)
 else:
     st.info("Please ensure the CSV datasets are in the same folder as this script to begin.")
-
 
     
