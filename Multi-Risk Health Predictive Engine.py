@@ -1,6 +1,140 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
+from sklearn.preprocessing import StandardScaler
+from sklearn.ensemble import RandomForestClassifier
+import xgboost as xgb
+import warnings
+
+# --- Page Configuration ---
+st.set_page_config(page_title="Multi-Risk Health Engine", layout="wide")
+warnings.filterwarnings('ignore')
+
+# --- Refined CSS Styling (Matching your Photo) ---
+st.markdown("""
+    <style>
+    /* Main Background */
+    .stApp { background-color: #f8f9fa; }
+
+    /* Metric Cards Styling */
+    [data-testid="stMetric"] {
+        background-color: #ffffff !important;
+        padding: 20px !important;
+        border-radius: 12px !important;
+        border: 1px solid #eceeef !important;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.05) !important;
+    }
+
+    /* Metric Label (Black & Bold) */
+    [data-testid="stMetricLabel"] p {
+        color: #000000 !important;
+        font-size: 16px !important;
+        font-weight: 600 !important;
+    }
+
+    /* Metric Value (Black) */
+    [data-testid="stMetricValue"] div {
+        color: #000000 !important;
+        font-size: 32px !important;
+        font-weight: 700 !important;
+    }
+
+    h1, h2, h3, p { color: #1a1a1a !important; }
+    </style>
+    """, unsafe_allow_html=True)
+
+# --- Model Training & Data Loading ---
+@st.cache_resource
+def load_and_train():
+    # 1. Load Datasets
+    df_diab = pd.read_csv('diabetes_dataset_new.csv').drop_duplicates()
+    df_heart = pd.read_csv('heart_disease_health_indicators_BRFSS2015.csv').drop_duplicates()
+    df_ckd = pd.read_csv('CKD_NHANES_2021_2023.csv').drop_duplicates()
+
+    # 2. Train Diabetes Model (Random Forest)
+    # Prepare dummy variables for categoricals found in your notebook
+    df_diab_prep = pd.get_dummies(df_diab, columns=['smoking_history', 'gender', 'location'], drop_first=True)
+    X_diab = df_diab_prep.drop(columns=['diabetes'])
+    y_diab = df_diab_prep['diabetes']
+    scaler_diab = StandardScaler().fit(X_diab)
+    model_diab = RandomForestClassifier(n_estimators=100, max_depth=12, random_state=42).fit(scaler_diab.transform(X_diab), y_diab)
+
+    # 3. Train Heart Model (Random Forest)
+    X_hrt = df_heart.drop(columns=['HeartDiseaseorAttack'])
+    y_hrt = df_heart['HeartDiseaseorAttack']
+    scaler_hrt = StandardScaler().fit(X_hrt)
+    model_heart = RandomForestClassifier(n_estimators=100, max_depth=12, random_state=42).fit(scaler_hrt.transform(X_hrt), y_hrt)
+
+    # 4. Train CKD Engine (XGBoost)
+    # Using the features identified in your notebook's Integrated Pipeline
+    ckd_features = ['age', 'bmi', 'bp_systolic', 'bp_diastolic', 'serum_creatinine', 'egfr']
+    # Pre-filling missing lab values with median as per your preprocessing logic
+    df_ckd_clean = df_ckd.copy()
+    for col in ckd_features:
+        df_ckd_clean[col] = df_ckd_clean[col].fillna(df_ckd_clean[col].median())
+    
+    X_ckd = df_ckd_clean[ckd_features]
+    y_ckd = df_ckd_clean['ckd_present']
+    model_ckd = xgb.XGBClassifier().fit(X_ckd, y_ckd)
+
+    return model_diab, model_heart, model_ckd, scaler_diab, scaler_hrt, X_diab, X_hrt
+
+# Initialize Engine
+try:
+    m_diab, m_heart, m_ckd, sc_diab, sc_hrt, feat_diab, feat_hrt = load_and_train()
+except Exception as e:
+    st.error(f"Initialization Error: {e}")
+    st.stop()
+
+# --- Sidebar Inputs ---
+st.sidebar.header("📋 Patient Biomarkers")
+age = st.sidebar.slider("Age", 18, 100, 45)
+bmi = st.sidebar.slider("BMI", 10.0, 50.0, 25.0)
+sbp = st.sidebar.number_input("Systolic BP (mmHg)", 80, 200, 120)
+dbp = st.sidebar.number_input("Diastolic BP (mmHg)", 40, 120, 80)
+scr = st.sidebar.number_input("Serum Creatinine (mg/dL)", 0.1, 10.0, 1.0)
+egfr = st.sidebar.number_input("eGFR (mL/min/1.73m²)", 10, 150, 90)
+
+# --- Dynamic Prediction Logic ---
+
+# 1. Diabetes Risk Prediction
+input_diab = feat_diab.median().values.reshape(1, -1)
+# Mapping sliders to correct column indices in the diabetes model
+if 'age' in feat_diab.columns: input_diab[0, feat_diab.columns.get_loc('age')] = age
+if 'bmi' in feat_diab.columns: input_diab[0, feat_diab.columns.get_loc('bmi')] = bmi
+prob_diab = m_diab.predict_proba(sc_diab.transform(input_diab))[0][1] * 100
+
+# 2. Heart Risk Prediction
+input_hrt = feat_hrt.median().values.reshape(1, -1)
+if 'Age' in feat_hrt.columns: input_hrt[0, feat_hrt.columns.get_loc('Age')] = age
+if 'BMI' in feat_hrt.columns: input_hrt[0, feat_hrt.columns.get_loc('BMI')] = bmi
+prob_heart = m_heart.predict_proba(sc_hrt.transform(input_hrt))[0][1] * 100
+
+# 3. CKD Risk Prediction (Chained from sliders)
+input_ckd = np.array([[age, bmi, sbp, dbp, scr, egfr]])
+prob_ckd = m_ckd.predict_proba(input_ckd)[0][1] * 100
+
+# --- Main Dashboard ---
+st.title("🏥 Multi-Risk Health Predictive Engine")
+st.markdown("---")
+
+m1, m2, m3 = st.columns(3)
+m1.metric("Diabetes Risk", f"{prob_diab:.1f}%")
+m2.metric("Heart Risk", f"{prob_heart:.1f}%")
+m3.metric("CKD Risk", f"{prob_ckd:.1f}%", delta_color="inverse")
+
+# Optional: Add Risk Interpretations
+st.subheader("Clinical Insights")
+if prob_ckd > 50:
+    st.warning("High risk of Chronic Kidney Disease detected. Urgent renal consult recommended.")
+else:
+    st.success("Kidney function appears stable based on current biomarkers.")
+
+
+
+"""import streamlit as st
+import pandas as pd
+import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.model_selection import train_test_split
@@ -19,7 +153,7 @@ st.set_page_config(page_title="Multi-Risk Health Engine", layout="wide")
 
 st.markdown("""
 
-
+"""
 
     <style>
 
@@ -43,7 +177,7 @@ st.markdown("""
     }
 
     </style>
-
+"""
 
 
     """, unsafe_allow_html=True)
@@ -190,4 +324,7 @@ if models:
             ax_roc.legend()
             st.pyplot(fig_roc)
 else:
-    st.info("Please ensure the CSV datasets are in the same folder as this script to begin.")
+    st.info("Please ensure the CSV datasets are in the same folder as this script to begin.")"""
+
+
+    
