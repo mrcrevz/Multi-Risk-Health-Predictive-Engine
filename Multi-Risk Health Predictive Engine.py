@@ -14,48 +14,32 @@ warnings.filterwarnings('ignore')
 st.set_page_config(page_title="Multi-Risk Health Engine", layout="wide")
 
 # --- CSS Styling ---
+
+
+
 st.markdown("""
+
+
+
     <style>
-    /* 1. Main app background (Light Grey) */
-    .stApp { 
-        background-color: #f8f9fa; 
-    }
 
-    /* 2. Target Metric Containers (White Card look) */
-    [data-testid="stMetric"] {
-        background-color: #ffffff !important;
-        padding: 20px !important;
-        border-radius: 12px !important;
-        border: 1px solid #eceeef !important;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.05) !important;
-    }
 
-    /* 3. Metric LABEL (Title) - Black and bold */
-    [data-testid="stMetricLabel"] p {
-        color: #000000 !important;
-        font-size: 16px !important;
-        font-weight: 600 !important;
-        margin-bottom: 8px !important;
-    }
 
-    /* 4. Metric VALUE (The percentage) - Black and crisp */
+    .main { background-color: #f5f7f9; }
+
+
+
+    .stMetric { background-color: #ffffff; padding: 15px; border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+
+    /* 4. Force Metric VALUE (The percentage/number) to black */
     [data-testid="stMetricValue"] div {
         color: #000000 !important;
-        font-size: 32px !important;
-        font-weight: 700 !important;
     }
 
-    /* 5. Clean up Headers */
-    h1, h2, h3, .stSubheader, p {
-        color: #1a1a1a !important;
-        font-family: "Source Sans Pro", sans-serif;
-    }
-
-    /* Remove extra padding from columns to keep cards tight */
-    [data-testid="column"] {
-        padding: 0 10px !important;
-    }
     </style>
+
+
+
     """, unsafe_allow_html=True)
 
 # --- Logic: Data Cleaning & Preprocessing ---
