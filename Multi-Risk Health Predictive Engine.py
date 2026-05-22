@@ -116,21 +116,42 @@ if models:
     # --- Main Dashboard ---
     col1, col2 = st.columns([1, 1])
 
-    with col1:
+with col1:
         st.subheader("Patient Risk Profile")
         
-        # Calculate Intermediate Risks (Using medians for missing categorical data)
-        raw_diab = np.zeros((1, len(X_diab_cols.columns)))
-        prob_diab = model_diab.predict_proba(scaler_diab.transform(raw_diab))[0][1] * 100
+        # --- 1. DYNAMIC DIABETES PREDICTION ---
+        # Create a base array using medians so we don't use all zeros
+        input_diab = X_diab_cols.median().values.reshape(1, -1)
+        # Manually map the sliders to the correct columns
+        if 'age' in X_diab_cols.columns:
+            input_diab[0, X_diab_cols.columns.get_loc('age')] = age
+        if 'bmi' in X_diab_cols.columns:
+            input_diab[0, X_diab_cols.columns.get_loc('bmi')] = bmi
+        # Scale and predict
+        prob_diab = model_diab.predict_proba(scaler_diab.transform(input_diab))[0][1] * 100
 
-        raw_hrt = np.zeros((1, len(X_hrt_cols.columns)))
-        prob_heart = model_heart.predict_proba(scaler_hrt.transform(raw_hrt))[0][1] * 100
+        # --- 2. DYNAMIC HEART RISK PREDICTION ---
+        input_hrt = X_hrt_cols.median().values.reshape(1, -1)
+        # Note: Check if your Heart CSV uses "Age" or "age" (it's case sensitive!)
+        if 'Age' in X_hrt_cols.columns:
+            input_hrt[0, X_hrt_cols.columns.get_loc('Age')] = age
+        elif 'age' in X_hrt_cols.columns:
+            input_hrt[0, X_hrt_cols.columns.get_loc('age')] = age
+            
+        if 'BMI' in X_hrt_cols.columns:
+            input_hrt[0, X_hrt_cols.columns.get_loc('BMI')] = bmi
+        elif 'bmi' in X_hrt_cols.columns:
+            input_hrt[0, X_hrt_cols.columns.get_loc('bmi')] = bmi
+            
+        # Scale and predict
+        prob_heart = model_heart.predict_proba(scaler_hrt.transform(input_hrt))[0][1] * 100
 
-        # Integrated CKD Prediction
+        # --- 3. INTEGRATED CKD PREDICTION ---
+        # This part was already working because it used the variables directly!
         live_input = np.array([[age, bmi, sys_bp, dia_bp, creatinine, egfr, prob_diab, prob_heart]])
         final_ckd_prob = model_ckd.predict_proba(live_input)[0][1] * 100
 
-        # Display Metrics
+        # --- Display Metrics ---
         m1, m2, m3 = st.columns(3)
         m1.metric("Diabetes Risk", f"{prob_diab:.1f}%")
         m2.metric("Heart Risk", f"{prob_heart:.1f}%")
