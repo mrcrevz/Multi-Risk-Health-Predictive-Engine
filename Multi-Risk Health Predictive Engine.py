@@ -36,6 +36,12 @@ st.markdown("""
         color: #000000 !important;
     }
 
+    /* 3. Force Metric LABEL (The title) to black */
+    [data-testid="stMetricLabel"] p {
+        color: #000000 !important;
+        font-weight: bold;
+    }
+
     </style>
 
 
