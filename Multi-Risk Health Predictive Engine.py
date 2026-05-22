@@ -16,8 +16,34 @@ st.set_page_config(page_title="Multi-Risk Health Engine", layout="wide")
 # --- CSS Styling ---
 st.markdown("""
     <style>
-    .main { background-color: #f5f7f9; }
-    .stMetric { background-color: #ffffff; padding: 15px; border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+    /* Main background color */
+    .stApp { background-color: #f5f7f9; }
+
+    /* Target all text elements to be black */
+    html, body, [class*="css"], .stMarkdown, p, h1, h2, h3, h4, h5, h6 {
+        color: #000000 !important;
+    }
+
+    /* Style the metric cards specifically */
+    [data-testid="stMetricValue"] > div {
+        color: #000000 !important;
+    }
+    
+    [data-testid="stMetricLabel"] p {
+        color: #333333 !important; /* Slightly softer black for labels */
+    }
+
+    .stMetric { 
+        background-color: #ffffff; 
+        padding: 15px; 
+        border-radius: 10px; 
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1); 
+    }
+
+    /* Sidebar text color adjustments */
+    section[data-testid="stSidebar"] .css-ng1t4o, section[data-testid="stSidebar"] p, section[data-testid="stSidebar"] span {
+        color: #000000 !important;
+    }
     </style>
     """, unsafe_allow_html=True)
 
